@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { MOCK_BOARDS, MOCK_BOARD_DETAIL } from './data/mockData';
 import Sidebar from './components/Sidebar/Sidebar';
@@ -21,6 +21,22 @@ function reorder(list, startIndex, endIndex) {
 }
 
 export default function App() {
+  // ── Auto-disappearing scrollbars ──
+  useEffect(() => {
+    const handleScroll = (e) => {
+      const el = e.target;
+      if (el && el.classList) {
+        el.classList.add('is-scrolling');
+        clearTimeout(el._scrollTimer);
+        el._scrollTimer = setTimeout(() => {
+          el.classList.remove('is-scrolling');
+        }, 800);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => window.removeEventListener('scroll', handleScroll, true);
+  }, []);
+
   // ── State ──
   const [boards, setBoards] = useState(MOCK_BOARDS);
   const [boardDetails, setBoardDetails] = useState({ [MOCK_BOARD_DETAIL.id]: MOCK_BOARD_DETAIL });
