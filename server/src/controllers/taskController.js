@@ -56,12 +56,13 @@ exports.updateTask = asyncHandler(async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   const taskId = Number(req.params.id);
-  const { title, description, columnId, subtasks } = req.body;
+  const { title, description, columnId, position, subtasks } = req.body;
 
   const data = {};
   if (title !== undefined) data.title = title;
   if (description !== undefined) data.description = description;
   if (columnId !== undefined) data.columnId = Number(columnId);
+  if (position !== undefined) data.position = Number(position);
 
   // Handle subtask upsert/delete
   if (subtasks !== undefined) {

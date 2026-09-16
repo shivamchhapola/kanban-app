@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
-import { MOCK_BOARDS, MOCK_BOARD_DETAIL } from './data/mockData';
+import { boardsApi } from './api/boardsApi';
+import { tasksApi } from './api/tasksApi';
+import { subtasksApi } from './api/subtasksApi';
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
 import BoardView from './components/Board/BoardView';
@@ -38,60 +40,93 @@ export default function App() {
   }, []);
 
   // ── State ──
-  const [boards, setBoards] = useState(MOCK_BOARDS);
-  const [boardDetails, setBoardDetails] = useState({ [MOCK_BOARD_DETAIL.id]: MOCK_BOARD_DETAIL });
-  const [activeBoardId, setActiveBoardId] = useState(MOCK_BOARD_DETAIL.id);
+  const [boards, setBoards] = useState([]);
+  const [boardDetails, setBoardDetails] = useState({});
+  const [activeBoardId, setActiveBoardId] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Modal state
-  const [selectedTask, setSelectedTask]         = useState(null);
-  const [taskToEdit, setTaskToEdit]             = useState(null);
-  const [taskToDelete, setTaskToDelete]         = useState(null);
-  const [showCreateTask, setShowCreateTask]     = useState(false);
-  const [showEditBoard, setShowEditBoard]       = useState(false);
-  const [showCreateBoard, setShowCreateBoard]   = useState(false);
-  const [showDeleteBoard, setShowDeleteBoard]   = useState(false);
+  const [selectedTask, setSelectedTask]       = useState(null);
+  const [taskToEdit, setTaskToEdit]           = useState(null);
+  const [taskToDelete, setTaskToDelete]       = useState(null);
+  const [showCreateTask, setShowCreateTask]   = useState(false);
+  const [showEditBoard, setShowEditBoard]     = useState(false);
+  const [showCreateBoard, setShowCreateBoard] = useState(false);
+  const [showDeleteBoard, setShowDeleteBoard] = useState(false);
 
-  const activeBoard = boardDetails[activeBoardId] ?? null;
+  const activeBoard = (activeBoardId && boardDetails[activeBoardId]) ? boardDetails[activeBoardId] : null;
+
+  // ── Initial Fetch on Mount ──
+  useEffect(() => {
+    async function loadBoards() {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await boardsApi.getAllBoards();
+        setBoards(data);
+        if (data.length > 0) {
+          const firstId = data[0].id;
+          setActiveBoardId(firstId);
+          const detail = await boardsApi.getBoardById(firstId);
+          setBoardDetails(prev => ({ ...prev, [firstId]: detail }));
+        }
+      } catch (err) {
+        console.error('Failed to load boards:', err);
+        setError('Failed to load data from backend server. Please make sure the server is running.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadBoards();
+  }, []);
 
   // ── Board selection ──
-  const handleSelectBoard = (id) => {
+  const handleSelectBoard = async (id) => {
     setActiveBoardId(id);
-    // Load mock detail for others too (stub — real app fetches from API)
     if (!boardDetails[id]) {
-      setBoardDetails(d => ({ ...d, [id]: { id, name: boards.find(b => b.id === id)?.name, columns: [] } }));
+      try {
+        const detail = await boardsApi.getBoardById(id);
+        setBoardDetails(prev => ({ ...prev, [id]: detail }));
+      } catch (err) {
+        console.error('Failed to load board detail:', err);
+      }
     }
   };
 
   // ── Drag and drop ──
-  const handleDragEnd = (result) => {
-    const { source, destination, draggableId } = result;
+  const handleDragEnd = async (result) => {
+    const { source, destination } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
     const board = boardDetails[activeBoardId];
+    if (!board) return;
+
     const sourceCol = board.columns.find(c => String(c.id) === source.droppableId);
     const destCol = board.columns.find(c => String(c.id) === destination.droppableId);
+    if (!sourceCol || !destCol) return;
 
+    const movedTask = sourceCol.tasks[source.index];
+
+    // Optimistic UI update
     if (source.droppableId === destination.droppableId) {
-      // Same column reorder
       const reordered = reorder(sourceCol.tasks, source.index, destination.index);
-      setBoardDetails(d => ({
-        ...d,
+      setBoardDetails(prev => ({
+        ...prev,
         [activeBoardId]: {
           ...board,
-          columns: board.columns.map(c => c.id === sourceCol.id ? { ...c, tasks: reordered } : c),
+          columns: board.columns.map(c => (c.id === sourceCol.id ? { ...c, tasks: reordered } : c)),
         },
       }));
     } else {
-      // Move to different column
-      const task = sourceCol.tasks[source.index];
       const newSourceTasks = Array.from(sourceCol.tasks);
       newSourceTasks.splice(source.index, 1);
       const newDestTasks = Array.from(destCol.tasks);
-      newDestTasks.splice(destination.index, 0, { ...task, columnId: destCol.id });
+      newDestTasks.splice(destination.index, 0, { ...movedTask, columnId: destCol.id });
 
-      setBoardDetails(d => ({
-        ...d,
+      setBoardDetails(prev => ({
+        ...prev,
         [activeBoardId]: {
           ...board,
           columns: board.columns.map(c => {
@@ -102,136 +137,233 @@ export default function App() {
         },
       }));
     }
+
+    // Persist drag position to backend API
+    try {
+      await tasksApi.updateTask(movedTask.id, {
+        columnId: destCol.id,
+        position: destination.index,
+      });
+    } catch (err) {
+      console.error('Failed to persist task drag position:', err);
+    }
   };
 
   // ── Task CRUD ──
-  const handleCreateTask = ({ title, description, columnId, subtasks }) => {
-    const board = boardDetails[activeBoardId];
-    const newTask = { id: Date.now(), title, description, columnId, subtasks: subtasks.map((st, i) => ({ id: Date.now() + i, title: st.title, isCompleted: false })) };
-    setBoardDetails(d => ({
-      ...d,
-      [activeBoardId]: {
-        ...board,
-        columns: board.columns.map(c => c.id === columnId ? { ...c, tasks: [...c.tasks, newTask] } : c),
-      },
-    }));
+  const handleCreateTask = async ({ title, description, columnId, subtasks }) => {
+    try {
+      const created = await tasksApi.createTask({
+        title,
+        description,
+        columnId: Number(columnId),
+        subtasks: subtasks.map(st => ({ title: st.title })),
+      });
+
+      setBoardDetails(prev => {
+        const board = prev[activeBoardId];
+        if (!board) return prev;
+        return {
+          ...prev,
+          [activeBoardId]: {
+            ...board,
+            columns: board.columns.map(c =>
+              c.id === Number(columnId) ? { ...c, tasks: [...c.tasks, created] } : c
+            ),
+          },
+        };
+      });
+    } catch (err) {
+      console.error('Failed to create task:', err);
+    }
   };
 
-  const handleUpdateTask = (taskId, data) => {
-    const board = boardDetails[activeBoardId];
-    const currentCol = board.columns.find(c => c.tasks.some(t => t.id === taskId));
-    let task = currentCol.tasks.find(t => t.id === taskId);
-    const updated = { ...task, ...data, subtasks: data.subtasks.map((st, i) => ({ id: Date.now() + i, ...st })) };
+  const handleUpdateTask = async (taskId, data) => {
+    try {
+      await tasksApi.updateTask(taskId, {
+        title: data.title,
+        description: data.description,
+        columnId: Number(data.columnId),
+        subtasks: data.subtasks.map(st => ({ title: st.title, isCompleted: st.isCompleted })),
+      });
 
-    if (data.columnId !== currentCol.id) {
-      // Move between columns
-      setBoardDetails(d => ({
-        ...d,
+      const detail = await boardsApi.getBoardById(activeBoardId);
+      setBoardDetails(prev => ({ ...prev, [activeBoardId]: detail }));
+
+      setSelectedTask(null);
+      setTaskToEdit(null);
+    } catch (err) {
+      console.error('Failed to update task:', err);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!taskToDelete) return;
+    try {
+      await tasksApi.deleteTask(taskToDelete.id);
+
+      setBoardDetails(prev => {
+        const board = prev[activeBoardId];
+        if (!board) return prev;
+        return {
+          ...prev,
+          [activeBoardId]: {
+            ...board,
+            columns: board.columns.map(c => ({
+              ...c,
+              tasks: c.tasks.filter(t => t.id !== taskToDelete.id),
+            })),
+          },
+        };
+      });
+    } catch (err) {
+      console.error('Failed to delete task:', err);
+    } finally {
+      setTaskToDelete(null);
+      setSelectedTask(null);
+    }
+  };
+
+  const handleToggleSubtask = async (taskId, subtaskId) => {
+    // Optimistic UI update
+    setBoardDetails(prev => {
+      const board = prev[activeBoardId];
+      if (!board) return prev;
+      return {
+        ...prev,
+        [activeBoardId]: {
+          ...board,
+          columns: board.columns.map(c => ({
+            ...c,
+            tasks: c.tasks.map(t =>
+              t.id !== taskId
+                ? t
+                : {
+                    ...t,
+                    subtasks: t.subtasks.map(st =>
+                      st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st
+                    ),
+                  }
+            ),
+          })),
+        },
+      };
+    });
+
+    setSelectedTask(prev =>
+      prev
+        ? {
+            ...prev,
+            subtasks: prev.subtasks.map(st =>
+              st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st
+            ),
+          }
+        : prev
+    );
+
+    try {
+      await subtasksApi.toggleSubtask(subtaskId);
+    } catch (err) {
+      console.error('Failed to toggle subtask:', err);
+    }
+  };
+
+  const handleStatusChange = async (taskId, newColumnId) => {
+    const numColId = Number(newColumnId);
+
+    setBoardDetails(prev => {
+      const board = prev[activeBoardId];
+      if (!board) return prev;
+      const sourceCol = board.columns.find(c => c.tasks.some(t => t.id === taskId));
+      if (!sourceCol) return prev;
+      const task = sourceCol.tasks.find(t => t.id === taskId);
+      return {
+        ...prev,
         [activeBoardId]: {
           ...board,
           columns: board.columns.map(c => {
-            if (c.id === currentCol.id) return { ...c, tasks: c.tasks.filter(t => t.id !== taskId) };
-            if (c.id === data.columnId) return { ...c, tasks: [...c.tasks, { ...updated, columnId: data.columnId }] };
+            if (c.id === sourceCol.id) return { ...c, tasks: c.tasks.filter(t => t.id !== taskId) };
+            if (c.id === numColId) return { ...c, tasks: [...c.tasks, { ...task, columnId: numColId }] };
             return c;
           }),
         },
-      }));
-    } else {
-      setBoardDetails(d => ({
-        ...d,
-        [activeBoardId]: {
-          ...board,
-          columns: board.columns.map(c => c.id === currentCol.id ? { ...c, tasks: c.tasks.map(t => t.id === taskId ? updated : t) } : c),
-        },
-      }));
+      };
+    });
+    setSelectedTask(null);
+
+    try {
+      await tasksApi.updateTask(taskId, { columnId: numColId });
+    } catch (err) {
+      console.error('Failed to change task status:', err);
     }
-    setSelectedTask(null);
-    setTaskToEdit(null);
-  };
-
-  const handleDeleteTask = () => {
-    const board = boardDetails[activeBoardId];
-    setBoardDetails(d => ({
-      ...d,
-      [activeBoardId]: {
-        ...board,
-        columns: board.columns.map(c => ({ ...c, tasks: c.tasks.filter(t => t.id !== taskToDelete.id) })),
-      },
-    }));
-    setTaskToDelete(null);
-    setSelectedTask(null);
-  };
-
-  const handleToggleSubtask = (taskId, subtaskId) => {
-    const board = boardDetails[activeBoardId];
-    const newBoard = {
-      ...board,
-      columns: board.columns.map(c => ({
-        ...c,
-        tasks: c.tasks.map(t => t.id !== taskId ? t : {
-          ...t,
-          subtasks: t.subtasks.map(st => st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st),
-        }),
-      })),
-    };
-    setBoardDetails(d => ({ ...d, [activeBoardId]: newBoard }));
-    setSelectedTask(prev => prev ? {
-      ...prev,
-      subtasks: prev.subtasks.map(st => st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st),
-    } : prev);
-  };
-
-  const handleStatusChange = (taskId, newColumnId) => {
-    const board = boardDetails[activeBoardId];
-    const sourceCol = board.columns.find(c => c.tasks.some(t => t.id === taskId));
-    const task = sourceCol.tasks.find(t => t.id === taskId);
-    setBoardDetails(d => ({
-      ...d,
-      [activeBoardId]: {
-        ...board,
-        columns: board.columns.map(c => {
-          if (c.id === sourceCol.id) return { ...c, tasks: c.tasks.filter(t => t.id !== taskId) };
-          if (c.id === newColumnId) return { ...c, tasks: [...c.tasks, { ...task, columnId: newColumnId }] };
-          return c;
-        }),
-      },
-    }));
-    setSelectedTask(null);
   };
 
   // ── Board CRUD ──
-  const handleSaveBoard = ({ name, columns }) => {
-    if (showEditBoard) {
-      // Edit existing
-      setBoardDetails(d => ({
-        ...d,
-        [activeBoardId]: { ...d[activeBoardId], name, columns: columns.map((c, i) => ({ ...c, tasks: d[activeBoardId].columns.find(oc => oc.id === c.id)?.tasks ?? [], position: i })) },
-      }));
-      setBoards(b => b.map(board => board.id === activeBoardId ? { ...board, name } : board));
-    } else {
-      // Create new
-      const id = Date.now();
-      const newBoard = { id, name, columns: columns.map((c, i) => ({ ...c, id: Date.now() + i, tasks: [], position: i })) };
-      setBoards(b => [...b, { id, name }]);
-      setBoardDetails(d => ({ ...d, [id]: newBoard }));
-      setActiveBoardId(id);
+  const handleSaveBoard = async ({ name, columns }) => {
+    try {
+      if (showEditBoard && activeBoardId) {
+        const updated = await boardsApi.updateBoard(activeBoardId, { name, columns });
+        setBoardDetails(prev => ({ ...prev, [activeBoardId]: updated }));
+        setBoards(prev => prev.map(b => (b.id === activeBoardId ? { ...b, name } : b)));
+      } else {
+        const created = await boardsApi.createBoard({ name, columns });
+        setBoards(prev => [...prev, { id: created.id, name: created.name }]);
+        setBoardDetails(prev => ({ ...prev, [created.id]: created }));
+        setActiveBoardId(created.id);
+      }
+    } catch (err) {
+      console.error('Failed to save board:', err);
     }
   };
 
-  const handleDeleteBoard = () => {
-    setBoards(b => b.filter(board => board.id !== activeBoardId));
-    setBoardDetails(d => { const copy = { ...d }; delete copy[activeBoardId]; return copy; });
-    const remaining = boards.filter(b => b.id !== activeBoardId);
-    setActiveBoardId(remaining[0]?.id ?? null);
-    setShowDeleteBoard(false);
+  const handleDeleteBoard = async () => {
+    if (!activeBoardId) return;
+    try {
+      await boardsApi.deleteBoard(activeBoardId);
+
+      const remainingBoards = boards.filter(b => b.id !== activeBoardId);
+      setBoards(remainingBoards);
+      setBoardDetails(prev => {
+        const copy = { ...prev };
+        delete copy[activeBoardId];
+        return copy;
+      });
+
+      const nextId = remainingBoards[0]?.id ?? null;
+      setActiveBoardId(nextId);
+      if (nextId) {
+        const detail = await boardsApi.getBoardById(nextId);
+        setBoardDetails(prev => ({ ...prev, [nextId]: detail }));
+      }
+    } catch (err) {
+      console.error('Failed to delete board:', err);
+    } finally {
+      setShowDeleteBoard(false);
+    }
   };
 
   // ── Add column inline ──
-  const handleAddColumn = (colName) => {
-    const board = boardDetails[activeBoardId];
+  const handleAddColumn = async (colName) => {
+    if (!activeBoardId) return;
     const COLORS = ['#49C4E5', '#8471F2', '#67E2AE', '#EA5555', '#F0A500'];
-    const newCol = { id: Date.now(), name: colName, color: COLORS[board.columns.length % COLORS.length], tasks: [] };
-    setBoardDetails(d => ({ ...d, [activeBoardId]: { ...board, columns: [...board.columns, newCol] } }));
+    const currentCols = boardDetails[activeBoardId]?.columns ?? [];
+    const color = COLORS[currentCols.length % COLORS.length];
+
+    try {
+      const newCol = await boardsApi.addColumn(activeBoardId, { name: colName, color });
+      setBoardDetails(prev => {
+        const board = prev[activeBoardId];
+        if (!board) return prev;
+        return {
+          ...prev,
+          [activeBoardId]: {
+            ...board,
+            columns: [...board.columns, { ...newCol, tasks: [] }],
+          },
+        };
+      });
+    } catch (err) {
+      console.error('Failed to add column:', err);
+    }
   };
 
   return (
@@ -251,12 +383,22 @@ export default function App() {
             onDeleteBoard={() => setShowDeleteBoard(true)}
           />
           <div className={styles.boardArea}>
-            <BoardView
-              board={activeBoard}
-              onTaskClick={setSelectedTask}
-              onDragEnd={handleDragEnd}
-              onAddColumn={handleAddColumn}
-            />
+            {loading ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                Loading boards from database…
+              </div>
+            ) : error ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--danger)', fontWeight: 700 }}>
+                {error}
+              </div>
+            ) : (
+              <BoardView
+                board={activeBoard}
+                onTaskClick={setSelectedTask}
+                onDragEnd={handleDragEnd}
+                onAddColumn={handleAddColumn}
+              />
+            )}
           </div>
         </div>
       </div>

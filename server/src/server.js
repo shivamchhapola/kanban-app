@@ -24,7 +24,7 @@ app.use(morgan('combined', { stream: accessLogStream }));
 app.use(morgan('dev')); // colourful stdout during dev
 
 // ── Core middleware ──────────────────────────────────────────────────
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
 // ── Routes ───────────────────────────────────────────────────────────

@@ -58,14 +58,49 @@ exports.getBoardById = asyncHandler(async (req, res) => {
   res.json(board);
 });
 
-// PUT /api/boards/:id — update board name
+// PUT /api/boards/:id — update board name and/or columns
 exports.updateBoard = asyncHandler(async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
+  const boardId = Number(req.params.id);
+  const { name, columns } = req.body;
+
+  if (columns && Array.isArray(columns)) {
+    const existingCols = await prisma.column.findMany({ where: { boardId } });
+    const existingIds = new Set(existingCols.map(c => c.id));
+    const incomingIds = new Set(
+      columns
+        .filter(c => c.id && typeof c.id === 'number' && !String(c.id).includes('.'))
+        .map(c => Number(c.id))
+    );
+
+    // Delete removed columns
+    const toDelete = existingCols.filter(c => !incomingIds.has(c.id)).map(c => c.id);
+    if (toDelete.length) {
+      await prisma.column.deleteMany({ where: { id: { in: toDelete } } });
+    }
+
+    // Update / Create columns
+    for (let i = 0; i < columns.length; i++) {
+      const col = columns[i];
+      const colId = Number(col.id);
+      if (col.id && existingIds.has(colId)) {
+        await prisma.column.update({
+          where: { id: colId },
+          data: { name: col.name, color: col.color || '#635FC7', position: i },
+        });
+      } else {
+        await prisma.column.create({
+          data: { name: col.name, color: col.color || '#635FC7', position: i, boardId },
+        });
+      }
+    }
+  }
+
   const board = await prisma.board.update({
-    where: { id: Number(req.params.id) },
-    data: { name: req.body.name },
+    where: { id: boardId },
+    data: { name },
     include: {
       columns: {
         orderBy: { position: 'asc' },
