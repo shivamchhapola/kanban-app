@@ -3,6 +3,7 @@ import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
+import CrossIcon from '../UI/CrossIcon';
 import styles from './TaskFormModal.module.css';
 
 const EMPTY_SUBTASK = (title = '', isCompleted = false) => ({ id: Date.now() + Math.random(), title, isCompleted });
@@ -57,7 +58,9 @@ export default function EditTaskModal({ task, board, isOpen, onClose, onSubmit }
             {subtasks.map((st, i) => (
               <div key={st.id} className={styles.subtaskRow}>
                 <Input value={st.title} onChange={e => updateSubtask(st.id, e.target.value)} placeholder="Subtask title" error={errors[`st_${i}`]} />
-                <button className={styles.removeBtn} onClick={() => removeSubtask(st.id)}>✕</button>
+                <button className={styles.removeBtn} onClick={() => removeSubtask(st.id)} aria-label="Remove subtask">
+                  <CrossIcon />
+                </button>
               </div>
             ))}
           </div>

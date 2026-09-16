@@ -34,10 +34,10 @@ ul, ol {
   list-style: none;
 }
 
-/* ── Ultra-light Auto-disappearing Scrollbars (Scroll-only) ────────────── */
+/* ── Modern Good-looking Scrollbars (Scroll-Only) ────────────── */
 ::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-button {
   display: none;
@@ -49,16 +49,16 @@ ul, ol {
 }
 ::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 3px;
-  transition: background-color 0.4s ease;
+  border-radius: 10px;
+  transition: background-color 0.35s ease;
 }
 
 /* Appears ONLY while actively scrolling */
 .is-scrolling::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(130, 143, 163, 0.45);
 }
 [data-theme="light"] .is-scrolling::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(130, 143, 163, 0.35);
 }
 
 /* Firefox support */
@@ -67,8 +67,8 @@ ul, ol {
   scrollbar-color: transparent transparent;
 }
 .is-scrolling {
-  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+  scrollbar-color: rgba(130, 143, 163, 0.45) transparent;
 }
 [data-theme="light"] .is-scrolling {
-  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  scrollbar-color: rgba(130, 143, 163, 0.35) transparent;
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Button from '../UI/Button';
+import CrossIcon from '../UI/CrossIcon';
 import styles from './EditBoardModal.module.css';
 
 const COLUMN_COLORS = ['#49C4E5', '#8471F2', '#67E2AE', '#EA5555', '#F0A500', '#FF8F70'];
@@ -59,7 +60,6 @@ export default function EditBoardModal({ board, isOpen, onClose, onSubmit }) {
           <div className={styles.columnList}>
             {columns.map((col, i) => (
               <div key={col.id} className={styles.columnRow}>
-                <span className={styles.colorDot} style={{ background: col.color }} />
                 <div className={styles.colInput}>
                   <Input
                     value={col.name}
@@ -72,6 +72,7 @@ export default function EditBoardModal({ board, isOpen, onClose, onSubmit }) {
                   {COLUMN_COLORS.map(c => (
                     <button
                       key={c}
+                      type="button"
                       className={`${styles.colorSwatch} ${col.color === c ? styles.colorSelected : ''}`}
                       style={{ background: c }}
                       onClick={() => updateColumn(col.id, 'color', c)}
@@ -79,7 +80,9 @@ export default function EditBoardModal({ board, isOpen, onClose, onSubmit }) {
                     />
                   ))}
                 </div>
-                <button className={styles.removeBtn} onClick={() => removeColumn(col.id)}>✕</button>
+                <button className={styles.removeBtn} onClick={() => removeColumn(col.id)} aria-label="Remove column">
+                  <CrossIcon />
+                </button>
               </div>
             ))}
           </div>

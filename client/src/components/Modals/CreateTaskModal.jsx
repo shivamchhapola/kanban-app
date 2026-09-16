@@ -3,6 +3,7 @@ import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
 import Button from '../UI/Button';
+import CrossIcon from '../UI/CrossIcon';
 import styles from './TaskFormModal.module.css';
 
 const EMPTY_SUBTASK = () => ({ id: Date.now() + Math.random(), title: '' });
@@ -62,7 +63,9 @@ export default function CreateTaskModal({ board, isOpen, onClose, onSubmit }) {
                   placeholder="e.g. Make coffee"
                   error={errors[`st_${i}`]}
                 />
-                <button className={styles.removeBtn} onClick={() => removeSubtask(st.id)} aria-label="Remove subtask">✕</button>
+                <button className={styles.removeBtn} onClick={() => removeSubtask(st.id)} aria-label="Remove subtask">
+                  <CrossIcon />
+                </button>
               </div>
             ))}
           </div>
