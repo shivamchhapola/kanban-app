@@ -1,0 +1,74 @@
+.header {
+  height: var(--header-height);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.menuWrapper {
+  position: relative;
+}
+
+.menuBtn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color var(--transition);
+}
+.menuBtn:hover:not(:disabled) { background: var(--surface-hover); }
+.menuBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  padding: 8px 0;
+  min-width: 180px;
+  z-index: 200;
+  animation: fadeIn 120ms ease;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  transition: background-color var(--transition), color var(--transition);
+}
+.dropdownItem:hover { background: var(--surface-hover); color: var(--text-primary); }
+.dropdownItem.danger { color: var(--danger); }
+.dropdownItem.danger:hover { background: var(--surface-hover); color: var(--danger); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

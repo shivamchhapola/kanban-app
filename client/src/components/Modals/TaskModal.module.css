@@ -1,0 +1,108 @@
+.taskHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.taskTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+.taskMenuWrapper { position: relative; flex-shrink: 0; }
+.menuBtn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color var(--transition);
+}
+.menuBtn:hover { background: var(--surface-hover); }
+.dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-modal);
+  padding: 8px 0;
+  min-width: 160px;
+  z-index: 10;
+  animation: fadeIn 120ms ease;
+}
+.dropdownItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color var(--transition);
+}
+.dropdownItem:hover { background: var(--surface-hover); color: var(--text-primary); }
+.dropdownItem.danger { color: var(--danger); }
+
+.description {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+
+.subtasksSection { margin-bottom: 24px; }
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+.subtaskList { display: flex; flex-direction: column; gap: 8px; }
+.subtaskItem {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition);
+  user-select: none;
+}
+.subtaskItem:hover { background: rgba(99, 95, 199, 0.12); }
+.subtaskItem.completed .subtaskTitle { text-decoration: line-through; opacity: 0.5; }
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  border-radius: 2px;
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color var(--transition), border-color var(--transition);
+}
+.checkbox.checked { background: var(--primary); border-color: var(--primary); }
+
+.subtaskTitle {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: opacity var(--transition);
+}
+
+.statusSection { margin-top: 8px; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

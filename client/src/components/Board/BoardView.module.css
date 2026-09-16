@@ -1,0 +1,22 @@
+.canvas {
+  display: flex;
+  gap: 24px;
+  padding: 24px;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.emptyText {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}

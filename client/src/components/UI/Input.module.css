@@ -1,0 +1,30 @@
+.wrapper { display: flex; flex-direction: column; gap: 8px; }
+
+.label { font-size: 12px; font-weight: 700; color: var(--text-secondary); }
+
+.inputRow { position: relative; display: flex; align-items: center; }
+
+.input {
+  width: 100%;
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--transition);
+}
+.input::placeholder { color: rgba(130, 143, 163, 0.5); }
+.input:focus { border-color: var(--primary); }
+.input.hasError { border-color: var(--danger); }
+
+.errorInline {
+  position: absolute;
+  right: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--danger);
+  pointer-events: none;
+}

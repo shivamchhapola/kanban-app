@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+/* ── Dark theme (default) ─────────────────────────────────── */
+:root {
+  --bg:              #20212C;
+  --surface:         #2B2C37;
+  --surface-hover:   #3E3F4E;
+  --surface-light:   #F4F7FD;
+
+  --primary:         #635FC7;
+  --primary-hover:   #A8A4FF;
+  --primary-light:   rgba(99, 95, 199, 0.1);
+
+  --text-primary:    #FFFFFF;
+  --text-secondary:  #828FA3;
+  --text-on-primary: #FFFFFF;
+
+  --border:          #3E3F4E;
+  --line:            #3E3F4E;
+
+  --danger:          #EA5555;
+  --danger-hover:    #FF9898;
+
+  /* Column status colors */
+  --col-todo:        #49C4E5;
+  --col-doing:       #8471F2;
+  --col-done:        #67E2AE;
+
+  /* Shadows */
+  --shadow-card:   0px 4px 6px rgba(54, 78, 126, 0.10);
+  --shadow-modal:  0 10px 40px rgba(0, 0, 0, 0.50);
+
+  /* Spacing */
+  --space-xs:  4px;
+  --space-sm:  8px;
+  --space-md:  16px;
+  --space-lg:  24px;
+  --space-xl:  32px;
+  --space-2xl: 48px;
+
+  /* Border radius */
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   16px;
+  --radius-pill: 24px;
+
+  /* Sidebar */
+  --sidebar-width: 260px;
+
+  /* Header */
+  --header-height: 72px;
+
+  /* Transitions */
+  --transition: 150ms ease;
+}
+
+/* ── Light theme ──────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg:             #F4F7FD;
+  --surface:        #FFFFFF;
+  --surface-hover:  #E9EFFA;
+  --border:         #E4EBFA;
+  --line:           #E4EBFA;
+  --text-primary:   #000112;
+  --text-secondary: #828FA3;
+}

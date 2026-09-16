@@ -1,0 +1,9 @@
+.message {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 24px;
+}
+.actions { display: flex; flex-direction: column; gap: 16px; }
+.actions > * { width: 100%; }
