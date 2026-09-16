@@ -30,7 +30,12 @@ exports.createBoard = asyncHandler(async (req, res) => {
       },
     },
     include: {
-      columns: { orderBy: { position: 'asc' } },
+      columns: {
+        orderBy: { position: 'asc' },
+        include: {
+          tasks: { orderBy: { position: 'asc' }, include: { subtasks: true } },
+        },
+      },
     },
   });
 

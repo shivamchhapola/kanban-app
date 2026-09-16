@@ -302,13 +302,21 @@ export default function App() {
     try {
       if (showEditBoard && activeBoardId) {
         const updated = await boardsApi.updateBoard(activeBoardId, { name, columns });
-        setBoardDetails(prev => ({ ...prev, [activeBoardId]: updated }));
+        const normalized = {
+          ...updated,
+          columns: (updated.columns || []).map(c => ({ ...c, tasks: c.tasks || [] })),
+        };
+        setBoardDetails(prev => ({ ...prev, [activeBoardId]: normalized }));
         setBoards(prev => prev.map(b => (b.id === activeBoardId ? { ...b, name } : b)));
       } else {
         const created = await boardsApi.createBoard({ name, columns });
-        setBoards(prev => [...prev, { id: created.id, name: created.name }]);
-        setBoardDetails(prev => ({ ...prev, [created.id]: created }));
-        setActiveBoardId(created.id);
+        const normalized = {
+          ...created,
+          columns: (created.columns || []).map(c => ({ ...c, tasks: c.tasks || [] })),
+        };
+        setBoards(prev => [...prev, { id: normalized.id, name: normalized.name }]);
+        setBoardDetails(prev => ({ ...prev, [normalized.id]: normalized }));
+        setActiveBoardId(normalized.id);
       }
     } catch (err) {
       console.error('Failed to save board:', err);

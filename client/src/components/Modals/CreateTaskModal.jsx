@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Modal from '../UI/Modal';
 import Input from '../UI/Input';
 import Select from '../UI/Select';
@@ -14,6 +14,12 @@ export default function CreateTaskModal({ board, isOpen, onClose, onSubmit }) {
   const [subtasks, setSubtasks] = useState([EMPTY_SUBTASK()]);
   const [columnId, setColumnId] = useState(board?.columns?.[0]?.id ?? '');
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (isOpen && board?.columns?.length > 0) {
+      setColumnId(String(board.columns[0].id));
+    }
+  }, [isOpen, board]);
 
   const validate = () => {
     const e = {};
