@@ -1,0 +1,28 @@
+{
+  "name": "kanban-app",
+  "version": "1.0.0",
+  "description": "Full-stack Kanban board — React, Express, PostgreSQL, Prisma",
+  "scripts": {
+    "dev": "concurrently --names \"SERVER,CLIENT\" --prefix-colors \"cyan,magenta\" \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "db:push": "npm run db:push --prefix server",
+    "db:seed": "npm run db:seed --prefix server",
+    "db:studio": "npm run db:studio --prefix server"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shivamchhapola/kanban-app.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/shivamchhapola/kanban-app/issues"
+  },
+  "homepage": "https://github.com/shivamchhapola/kanban-app#readme",
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}
