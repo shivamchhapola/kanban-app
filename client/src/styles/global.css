@@ -34,35 +34,41 @@ ul, ol {
   list-style: none;
 }
 
-/* ── Ultra-light Auto-disappearing Scrollbars ────────────── */
+/* ── Ultra-light Auto-disappearing Scrollbars (Scroll-only) ────────────── */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 3px;
+  height: 3px;
+}
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 4px;
-  transition: background-color 0.3s ease;
+  border-radius: 3px;
+  transition: background-color 0.4s ease;
 }
 
-*:hover::-webkit-scrollbar-thumb,
+/* Appears ONLY while actively scrolling */
 .is-scrolling::-webkit-scrollbar-thumb {
-  background: rgba(130, 143, 163, 0.35);
+  background: rgba(255, 255, 255, 0.25);
+}
+[data-theme="light"] .is-scrolling::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--primary) !important;
-}
-
-/* Firefox scrollbar support */
+/* Firefox support */
 * {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
 }
-*:hover,
 .is-scrolling {
-  scrollbar-color: rgba(130, 143, 163, 0.35) transparent;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+[data-theme="light"] .is-scrolling {
+  scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
 }

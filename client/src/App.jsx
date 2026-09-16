@@ -30,7 +30,7 @@ export default function App() {
         clearTimeout(el._scrollTimer);
         el._scrollTimer = setTimeout(() => {
           el.classList.remove('is-scrolling');
-        }, 800);
+        }, 600);
       }
     };
     window.addEventListener('scroll', handleScroll, true);
