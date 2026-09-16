@@ -28,7 +28,7 @@ export default function Header({ board, onAddTask, onEditBoard, onDeleteBoard })
 
   return (
     <header className={styles.header}>
-      <h1 className={styles.title}>{board?.name ?? 'Select a Board'}</h1>
+      <h1 className={styles.title} title={board?.name}>{board?.name ?? 'Select a Board'}</h1>
 
       <div className={styles.actions}>
         <Button

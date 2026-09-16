@@ -1,3 +1,4 @@
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useTheme } from '../../context/ThemeContext';
 import styles from './Sidebar.module.css';
 
@@ -55,25 +56,43 @@ export default function Sidebar({ boards, activeBoardId, onSelectBoard, onCreate
       {/* Board list */}
       <div className={styles.boardSection}>
         <p className={styles.sectionLabel}>ALL BOARDS ({boards.length})</p>
-        <ul className={styles.boardList}>
-          {boards.map(board => (
-            <li key={board.id}>
-              <button
-                className={`${styles.boardItem} ${board.id === activeBoardId ? styles.active : ''}`}
-                onClick={() => onSelectBoard(board.id)}
-              >
-                <BoardIcon />
-                <span>{board.name}</span>
-              </button>
-            </li>
-          ))}
-          <li>
-            <button className={styles.createBtn} onClick={onCreateBoard}>
-              <BoardIcon />
-              <span>+ Create New Board</span>
-            </button>
-          </li>
-        </ul>
+        <Droppable droppableId="sidebar-boards-list" type="BOARD">
+          {(provided) => (
+            <ul
+              className={styles.boardList}
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+            >
+              {boards.map((board, index) => (
+                <Draggable key={board.id} draggableId={`board-${board.id}`} index={index}>
+                  {(dragProvided) => (
+                    <li
+                      ref={dragProvided.innerRef}
+                      {...dragProvided.draggableProps}
+                      {...dragProvided.dragHandleProps}
+                    >
+                      <button
+                        className={`${styles.boardItem} ${board.id === activeBoardId ? styles.active : ''}`}
+                        onClick={() => onSelectBoard(board.id)}
+                        title={board.name}
+                      >
+                        <BoardIcon />
+                        <span title={board.name}>{board.name}</span>
+                      </button>
+                    </li>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+              <li>
+                <button className={styles.createBtn} onClick={onCreateBoard}>
+                  <BoardIcon />
+                  <span>+ Create New Board</span>
+                </button>
+              </li>
+            </ul>
+          )}
+        </Droppable>
       </div>
 
       {/* Theme toggle */}

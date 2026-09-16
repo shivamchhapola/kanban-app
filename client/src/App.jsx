@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { DragDropContext } from '@hello-pangea/dnd';
 import { ThemeProvider } from './context/ThemeContext';
 import { boardsApi } from './api/boardsApi';
 import { tasksApi } from './api/tasksApi';
@@ -11,6 +12,7 @@ import CreateTaskModal from './components/Modals/CreateTaskModal';
 import EditTaskModal from './components/Modals/EditTaskModal';
 import EditBoardModal from './components/Modals/EditBoardModal';
 import ConfirmDeleteModal from './components/Modals/ConfirmDeleteModal';
+import Toast from './components/UI/Toast';
 import './styles/global.css';
 import styles from './App.module.css';
 
@@ -45,6 +47,7 @@ export default function App() {
   const [activeBoardId, setActiveBoardId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [toast, setToast] = useState({ message: '', type: 'error' });
 
   // Modal state
   const [selectedTask, setSelectedTask]       = useState(null);
@@ -56,6 +59,10 @@ export default function App() {
   const [showDeleteBoard, setShowDeleteBoard] = useState(false);
 
   const activeBoard = (activeBoardId && boardDetails[activeBoardId]) ? boardDetails[activeBoardId] : null;
+
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+  };
 
   // ── Initial Fetch on Mount ──
   useEffect(() => {
@@ -74,6 +81,7 @@ export default function App() {
       } catch (err) {
         console.error('Failed to load boards:', err);
         setError('Failed to load data from backend server. Please make sure the server is running.');
+        showToast('Failed to load data from backend server');
       } finally {
         setLoading(false);
       }
@@ -90,16 +98,25 @@ export default function App() {
         setBoardDetails(prev => ({ ...prev, [id]: detail }));
       } catch (err) {
         console.error('Failed to load board detail:', err);
+        showToast('Failed to load board detail');
       }
     }
   };
 
   // ── Drag and drop ──
   const handleDragEnd = async (result) => {
-    const { source, destination } = result;
+    const { source, destination, type } = result;
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
+    // ── Board Drag & Drop ──
+    if (type === 'BOARD') {
+      const reordered = reorder(boards, source.index, destination.index);
+      setBoards(reordered);
+      return;
+    }
+
+    // ── Task Drag & Drop ──
     const board = boardDetails[activeBoardId];
     if (!board) return;
 
@@ -146,6 +163,7 @@ export default function App() {
       });
     } catch (err) {
       console.error('Failed to persist task drag position:', err);
+      showToast('Failed to save task position');
     }
   };
 
@@ -174,6 +192,7 @@ export default function App() {
       });
     } catch (err) {
       console.error('Failed to create task:', err);
+      showToast(err.message || 'Failed to create task');
     }
   };
 
@@ -193,6 +212,7 @@ export default function App() {
       setTaskToEdit(null);
     } catch (err) {
       console.error('Failed to update task:', err);
+      showToast(err.message || 'Failed to update task');
     }
   };
 
@@ -217,6 +237,7 @@ export default function App() {
       });
     } catch (err) {
       console.error('Failed to delete task:', err);
+      showToast(err.message || 'Failed to delete task');
     } finally {
       setTaskToDelete(null);
       setSelectedTask(null);
@@ -264,6 +285,7 @@ export default function App() {
       await subtasksApi.toggleSubtask(subtaskId);
     } catch (err) {
       console.error('Failed to toggle subtask:', err);
+      showToast('Failed to toggle subtask');
     }
   };
 
@@ -294,6 +316,7 @@ export default function App() {
       await tasksApi.updateTask(taskId, { columnId: numColId });
     } catch (err) {
       console.error('Failed to change task status:', err);
+      showToast('Failed to change task status');
     }
   };
 
@@ -320,6 +343,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to save board:', err);
+      showToast(err.message || 'Failed to save board');
     }
   };
 
@@ -344,6 +368,7 @@ export default function App() {
       }
     } catch (err) {
       console.error('Failed to delete board:', err);
+      showToast(err.message || 'Failed to delete board');
     } finally {
       setShowDeleteBoard(false);
     }
@@ -371,100 +396,109 @@ export default function App() {
       });
     } catch (err) {
       console.error('Failed to add column:', err);
+      showToast('Failed to add column');
     }
   };
 
   return (
     <ThemeProvider>
-      <div className={styles.app}>
-        <Sidebar
-          boards={boards}
-          activeBoardId={activeBoardId}
-          onSelectBoard={handleSelectBoard}
-          onCreateBoard={() => setShowCreateBoard(true)}
-        />
-        <div className={styles.main}>
-          <Header
-            board={activeBoard}
-            onAddTask={() => setShowCreateTask(true)}
-            onEditBoard={() => setShowEditBoard(true)}
-            onDeleteBoard={() => setShowDeleteBoard(true)}
+      <DragDropContext onDragEnd={handleDragEnd}>
+        <div className={styles.app}>
+          <Sidebar
+            boards={boards}
+            activeBoardId={activeBoardId}
+            onSelectBoard={handleSelectBoard}
+            onCreateBoard={() => setShowCreateBoard(true)}
           />
-          <div className={styles.boardArea}>
-            {loading ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontWeight: 700 }}>
-                Loading boards from database…
-              </div>
-            ) : error ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--danger)', fontWeight: 700 }}>
-                {error}
-              </div>
-            ) : (
-              <BoardView
-                board={activeBoard}
-                onTaskClick={setSelectedTask}
-                onDragEnd={handleDragEnd}
-                onAddColumn={handleAddColumn}
-              />
-            )}
+          <div className={styles.main}>
+            <Header
+              board={activeBoard}
+              onAddTask={() => setShowCreateTask(true)}
+              onEditBoard={() => setShowEditBoard(true)}
+              onDeleteBoard={() => setShowDeleteBoard(true)}
+            />
+            <div className={styles.boardArea}>
+              {loading ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                  Loading boards from database…
+                </div>
+              ) : error ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--danger)', fontWeight: 700 }}>
+                  {error}
+                </div>
+              ) : (
+                <BoardView
+                  board={activeBoard}
+                  onTaskClick={setSelectedTask}
+                  onAddColumn={handleAddColumn}
+                />
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Task view modal */}
-      <TaskModal
-        task={selectedTask}
-        board={activeBoard}
-        isOpen={!!selectedTask && !taskToEdit}
-        onClose={() => setSelectedTask(null)}
-        onEdit={(task) => { setTaskToEdit(task); setSelectedTask(null); }}
-        onDelete={(task) => { setTaskToDelete(task); setSelectedTask(null); }}
-        onToggleSubtask={handleToggleSubtask}
-        onStatusChange={handleStatusChange}
-      />
+        {/* Task view modal */}
+        <TaskModal
+          task={selectedTask}
+          board={activeBoard}
+          isOpen={!!selectedTask && !taskToEdit}
+          onClose={() => setSelectedTask(null)}
+          onEdit={(task) => { setTaskToEdit(task); setSelectedTask(null); }}
+          onDelete={(task) => { setTaskToDelete(task); setSelectedTask(null); }}
+          onToggleSubtask={handleToggleSubtask}
+          onStatusChange={handleStatusChange}
+        />
 
-      {/* Create task modal */}
-      <CreateTaskModal
-        board={activeBoard}
-        isOpen={showCreateTask}
-        onClose={() => setShowCreateTask(false)}
-        onSubmit={handleCreateTask}
-      />
+        {/* Create task modal */}
+        <CreateTaskModal
+          board={activeBoard}
+          isOpen={showCreateTask}
+          onClose={() => setShowCreateTask(false)}
+          onSubmit={handleCreateTask}
+        />
 
-      {/* Edit task modal */}
-      <EditTaskModal
-        task={taskToEdit}
-        board={activeBoard}
-        isOpen={!!taskToEdit}
-        onClose={() => setTaskToEdit(null)}
-        onSubmit={handleUpdateTask}
-      />
+        {/* Edit task modal */}
+        <EditTaskModal
+          task={taskToEdit}
+          board={activeBoard}
+          isOpen={!!taskToEdit}
+          onClose={() => setTaskToEdit(null)}
+          onSubmit={handleUpdateTask}
+        />
 
-      {/* Edit board modal */}
-      <EditBoardModal
-        board={showEditBoard ? activeBoard : null}
-        isOpen={showEditBoard || showCreateBoard}
-        onClose={() => { setShowEditBoard(false); setShowCreateBoard(false); }}
-        onSubmit={handleSaveBoard}
-      />
+        {/* Edit board modal */}
+        <EditBoardModal
+          board={showEditBoard ? activeBoard : null}
+          isOpen={showEditBoard || showCreateBoard}
+          onClose={() => { setShowEditBoard(false); setShowCreateBoard(false); }}
+          onSubmit={handleSaveBoard}
+        />
 
-      {/* Delete task */}
-      <ConfirmDeleteModal
-        isOpen={!!taskToDelete}
-        onClose={() => setTaskToDelete(null)}
-        onConfirm={handleDeleteTask}
-        type="task"
-        name={taskToDelete?.title ?? ''}
-      />
+        {/* Delete task */}
+        <ConfirmDeleteModal
+          isOpen={!!taskToDelete}
+          onClose={() => setTaskToDelete(null)}
+          onConfirm={handleDeleteTask}
+          type="task"
+          name={taskToDelete?.title ?? ''}
+        />
 
-      {/* Delete board */}
-      <ConfirmDeleteModal
-        isOpen={showDeleteBoard}
-        onClose={() => setShowDeleteBoard(false)}
-        onConfirm={handleDeleteBoard}
-        type="board"
-        name={activeBoard?.name ?? ''}
-      />
+        {/* Delete board */}
+        <ConfirmDeleteModal
+          isOpen={showDeleteBoard}
+          onClose={() => setShowDeleteBoard(false)}
+          onConfirm={handleDeleteBoard}
+          type="board"
+          name={activeBoard?.name ?? ''}
+        />
+
+        {/* Global Toast Error Notifications */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast({ message: '', type: 'error' })}
+        />
+      </DragDropContext>
     </ThemeProvider>
   );
 }

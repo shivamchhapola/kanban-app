@@ -70,7 +70,13 @@
   border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
   transition: background-color var(--transition), color var(--transition);
   text-align: left;
+}
+.boardItem span, .createBtn span {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
 }
 .boardItem:hover, .createBtn:hover { background: var(--primary-light); color: var(--primary); }
 .boardItem.active { background: var(--primary); color: #fff; }
