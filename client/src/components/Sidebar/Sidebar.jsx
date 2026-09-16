@@ -4,10 +4,11 @@ import styles from './Sidebar.module.css';
 // Board grid icon SVG
 function BoardIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <rect x="0" y="0" width="6" height="10" rx="1" fill="currentColor"/>
-      <rect x="9" y="0" width="7" height="6" rx="1" fill="currentColor"/>
-      <rect x="9" y="9" width="7" height="7" rx="1" fill="currentColor"/>
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path
+        d="M0 2.667A2.667 2.667 0 0 1 2.667 0h10.666A2.667 2.667 0 0 1 16 2.667v10.666A2.667 2.667 0 0 1 13.333 16H2.667A2.667 2.667 0 0 1 0 13.333V2.667zm5.333-1.334v13.334h8a1.333 1.333 0 0 0 1.334-1.334V2.667a1.333 1.333 0 0 0-1.334-1.334h-8z"
+        fill="currentColor"
+      />
     </svg>
   );
 }
